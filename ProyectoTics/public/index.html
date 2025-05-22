@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cuentitrón</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600&family=Open+Sans&display=swap');
+
+    body {
+      background: linear-gradient(to right, #2c3e50, #4ca1af);
+      font-family: 'Open Sans', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      color: #fff;
+      margin: 0;
+      text-align: center;
+      padding: 20px;
+    }
+
+    h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 64px;
+      font-weight: 600;
+      color: #ffffff;
+      text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      font-size: 24px;
+      font-weight: 400;
+      color: #e0e0e0;
+      margin-bottom: 40px;
+    }
+
+    .boton {
+      background-color: #3498db;
+      border: none;
+      color: white;
+      padding: 15px 30px;
+      margin: 10px;
+      text-align: center;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    .boton:hover {
+      background-color: #2980b9;
+      transform: scale(1.05);
+    }
+
+    .boton:active {
+      transform: scale(0.98);
+    }
+  </style>
+</head>
+<body>
+  <h1>Cuentitrón</h1>
+  <h2>Control de dispositivo ESP32</h2>
+
+  <button class="boton" onclick="enviarComando('encender')">Encender</button>
+  <button class="boton" onclick="enviarComando('apagar')">Apagar</button>
+  <button class="boton" onclick="enviarComando('reiniciar')">Reiniciar</button>
+
+  <script>
+    function enviarComando(comando) {
+      fetch('/comando', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comando })
+      })
+      .then(response => response.json())
+      .then(data => alert('✅ ' + data.mensaje))
+      .catch(error => alert('❌ Error: ' + error.message));
+    }
+  </script>
+</body>
+</html>
