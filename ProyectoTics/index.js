@@ -18,7 +18,7 @@ const BUCKET = 'TESTAPI';
 const influxDB = new InfluxDB({ url: INFLUX_URL, token: INFLUX_TOKEN });
 const writeApi = influxDB.getWriteApi(ORG, BUCKET, 'ns'); // ns: precisión en nanosegundos
 
-//Metodo ESP-32
+//Metodos ESP-32
 
 app.post("/ESP32.1", (req, res) => {
   const { valor } = req.body;
@@ -33,7 +33,7 @@ app.post("/ESP32.1", (req, res) => {
   res.status(200).json({ mensaje: "Valor guardado correctamente" });
 });
 
-// Segundo POST: usa la variable global y la elimina
+// Segundo metodo POST: calcula la diferencia y la guarda en la base de datos.
 app.post("/ESP32.2", (req, res) => {
   const { valor } = req.body;
 
@@ -46,25 +46,18 @@ app.post("/ESP32.2", (req, res) => {
   }
 
   const diferencia = global.datosTemporales - valor;
-  console.log("Diferencia:", diferencia);
-
-  // Eliminar la variable global y liberar memoria
+  
   delete global.datosTemporales;
-  console.log("Variable global eliminada");
 
-  res.status(200).json({ diferencia });
-
-  // AHORA EMPEZAMOS A ESCRIBIR LOS DATOS EN INFLUX.
-  // tenemos que alamacenar los datos primero de la variable valor y de diferencia en 2 lineas de codigo.
+  // Ahora se escriben los datos en influx.
+  
   const point = new Point('ValoresValidos')   // Nombre de la medición
-  .tag('dispositivo', 'ESP32')           // Etiquetas opcionales (tags)
+  .tag('dispositivo', 'ESP32')           
   .tag('CUENTA', 'Valido')
-  .floatField('valor', valor);            // Campo de tipo float (puede ser int, string, boolean también)
+  .floatField('valor', valor);            
 
-// Escribir en la base de datos
 writeApi.writePoint(point);
 
-// Confirmar escritura (muy importante)
 writeApi
   .close()
   .then(() => {
@@ -74,15 +67,13 @@ writeApi
     console.error('❌ Error al escribir en InfluxDB:', err);
   });
 
- const point2 = new Point('ValoresDescartados')   // Nombre de la medición
-  .tag('dispositivo', 'ESP32')           // Etiquetas opcionales (tags)
+ const point2 = new Point('ValoresDescartados')   
+  .tag('dispositivo', 'ESP32')           
   .tag('CUENTA', 'Descartado')
-  .floatField('valor', diferencia);            // Campo de tipo float (puede ser int, string, boolean también)
+  .floatField('valor', diferencia);            
 
-// Escribir en la base de datos
 writeApi.writePoint(point2);
 
-// Confirmar escritura (muy importante)
 writeApi
   .close()
   .then(() => {
@@ -92,9 +83,9 @@ writeApi
     console.error('❌ Error al escribir en InfluxDB:', err);
   });
 
+
+  res.status(200).json("Datos escritos en la base de datos con exito.");
 });
-
-
 
 // Ruta para recibir comandos desde la interfaz
 app.post('/comando', (req, res) => {
