@@ -16,9 +16,7 @@ const BUCKET = 'TESTAPI';
 
 // Instancia del cliente InfluxDB
 const influxDB = new InfluxDB({ url: INFLUX_URL, token: INFLUX_TOKEN });
-const writeApi = influxDB.getWriteApi(ORG, BUCKET, 'ns'); // ns: precisión en nanosegundos
-
-//Metodos ESP-32
+//Metodo ESP-32
 
 app.post("/ESP32.1", (req, res) => {
   const { valor } = req.body;
@@ -28,13 +26,15 @@ app.post("/ESP32.1", (req, res) => {
   }
 
   global.datosTemporales = valor;  // definir como variable global temporal
-  console.log("Valor guardado globalmente:", global.datosTemporales);
 
   res.status(200).json({ mensaje: "Valor guardado correctamente" });
 });
 
-// Segundo metodo POST: calcula la diferencia y la guarda en la base de datos.
+// Segundo POST: usa la variable global y la elimina
 app.post("/ESP32.2", (req, res) => {
+
+  const writeApi = influxDB.getWriteApi(ORG, BUCKET, 'ns'); // ns: precisión en nanosegundos
+
   const { valor } = req.body;
 
   if (valor === undefined) {
@@ -46,18 +46,21 @@ app.post("/ESP32.2", (req, res) => {
   }
 
   const diferencia = global.datosTemporales - valor;
-  
+
+  // Eliminar la variable global y liberar memoria
   delete global.datosTemporales;
 
-  // Ahora se escriben los datos en influx.
+  // Ahora se escriben los valores en la base de datos.
   
-  const point = new Point('ValoresValidos')   // Nombre de la medición
-  .tag('dispositivo', 'ESP32')           
+  const point = new Point('ValoresValidos')   
+  .tag('dispositivo', 'ESP32')          
   .tag('CUENTA', 'Valido')
-  .floatField('valor', valor);            
+  .floatField('valor', valor);           
 
+// Escribir en la base de datos
 writeApi.writePoint(point);
 
+// Confirmar escritura (muy importante)
 writeApi
   .close()
   .then(() => {
@@ -72,8 +75,10 @@ writeApi
   .tag('CUENTA', 'Descartado')
   .floatField('valor', diferencia);            
 
+// Escribir en la base de datos
 writeApi.writePoint(point2);
 
+// Confirmar escritura (muy importante)
 writeApi
   .close()
   .then(() => {
@@ -83,11 +88,12 @@ writeApi
     console.error('❌ Error al escribir en InfluxDB:', err);
   });
 
+  res.status(200).json("Valores Recibidos de manera exitosa.");
 
-  res.status(200).json("Datos escritos en la base de datos con exito.");
 });
 
 // Ruta para recibir comandos desde la interfaz
+
 app.post('/comando', (req, res) => {
   const { comando } = req.body;
   console.log('Comando recibido del usuario:', comando);
@@ -98,7 +104,8 @@ app.post('/comando', (req, res) => {
   res.json({ mensaje: `Comando "${comando}" recibido.` });
 });
 
-const PORT = 3000;
+const PORT = 3001;
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
+
